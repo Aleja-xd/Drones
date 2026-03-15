@@ -23,10 +23,72 @@ def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
     You can find inspiration in the textbook's pseudocode:
     Artificial Intelligence: A Modern Approach (4th Edition) by Russell and Norvig, Chapter 5: Constraint Satisfaction Problems
-    """
-    # TODO: Implement your code here
-    return None
+    
+    1ERA VERSION: 
+def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:    
+    stats = {"assignments": 0, "backtracks": 0}
 
+    def backtrack(cs: dict[str, str]) -> dict[str, str] | None:
+      v = unassigned[0]
+      for value in csp.domains[v]:
+          stats["assignments"] += 1
+
+          if csp.is_consistent(v, value, cs):
+
+              csp.assign(v, value, cs)
+              result = backtrack(cs)
+
+              if result is not None:
+                  return result
+
+              csp.unassign(v, cs)
+              stats["backtracks"] += 1
+
+      return None
+
+    cs: dict[str, str] = {}
+    result = backtrack(cs)
+
+    return result
+    
+    Prompt:Corrige y completa el siguiente algoritmo de backtracking para que funcione correctamente para un CSP de asignación de drones. 
+    Debe seguir la lógica estándar de backtracking y usar correctamente los métodos del objeto DroneAssignmentCSP. 
+    Mantén la estructura general del código, la función backtracking_search, la función interna backtrack y el diccionario de stats. 
+    Solo corrige errores, agrega lo que falta y haz que el algoritmo sea funcional y coherente.
+    """
+    stats = {"assignments": 0, "backtracks": 0}
+
+    def backtrack(cs: dict[str, str]) -> dict[str, str] | None:
+
+      if csp.is_complete(cs):
+          return cs
+
+      unassigned = csp.get_unassigned_variables(cs)
+      v = unassigned[0]
+
+      for value in csp.domains[v]:
+          stats["assignments"] += 1
+
+          if csp.is_consistent(v, value, cs):
+
+              csp.assign(v, value, cs)
+              result = backtrack(cs)
+
+              if result is not None:
+                  return result
+
+              csp.unassign(v, cs)
+              stats["backtracks"] += 1
+
+      return None
+
+    cs: dict[str, str] = {}
+    result = backtrack(cs)
+
+    print(f"[backtracking] Asignaciones intentadas: {stats['assignments']}")
+    print(f"[backtracking] Backtracks realizados:   {stats['backtracks']}")
+
+    return result
 
 def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     """
@@ -39,10 +101,114 @@ def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     - Use csp.get_neighbors(var) to get variables that share constraints with var.
     - Use csp.is_consistent(neighbor, val, assignment) to check if a value is still consistent.
     - Forward checking reduces the search space by detecting failures earlier than basic backtracking.
-    """
-    # TODO: Implement your code here
-    return None
+    
+    1ERSA VERSION:
+def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
+    stats = {"assignments": 0, "backtracks": 0}
 
+    def forward_check(var: str, assignment: dict[str, str]) -> dict[str, list[str]] | None:
+
+        eliminated: dict[str, list[str]] = {}
+
+        for neighbor in csp.get_neighbors(var):
+            if neighbor not in assignment:
+                eliminated[neighbor] = []
+
+            for val in list(domains[neighbor]):
+              if not csp.is_consistent(neighbor, val, assignment):
+                  csp.domains[neighbor].remove()
+                  eliminated[neighbor].append()
+
+        return eliminated
+
+    def backtrack(cs: dict[str, str]) -> dict[str, str] | None:
+
+      if csp.is_complete(cs):
+          return cs
+
+      unassigned = csp.get_unassigned_variables(cs)
+      v = unassigned[0]
+
+      for value in csp.domains[v]:
+          stats["assignments"] += 1
+
+          if csp.is_consistent(v, value, cs):
+
+              csp.assign(v, value, cs)
+              result = backtrack(cs)
+
+              if result is not None:
+                  return result
+
+              csp.unassign(v, cs)
+              stats["backtracks"] += 1
+
+      return None
+
+    cs: dict[str, str] = {}
+    result = backtrack(cs)
+
+    return result
+
+Prompt: Corrige y completa el siguiente algoritmo de backtracking con Forward Checking para que funcione correctamente para un CSP de asignación de drones. 
+Este debe seguir la lógica estándar de backtracking con forward checking, es decir seleccionar variable no asignada, probar valores del dominio, verificar consistencia, aplicar forward checking para eliminar valores inconsistentes en vecinos, restaurar dominios al hacer backtrack y usar correctamente los métodos del objeto.
+Mantén la estructura general del código, la función backtracking_fc, las funciones internas como forward_check y backtrack. Solo corrige errores, agrega lo que falta y haz que el algoritmo sea funcional y coherente.    
+    """
+    stats = {"assignments": 0, "backtracks": 0}
+
+    def forward_check(var: str, assignment: dict[str, str]) -> dict[str, list[str]] | None:
+
+        eliminated: dict[str, list[str]] = {}
+
+        for neighbor in csp.get_neighbors(var):
+            if neighbor not in assignment:
+                eliminated[neighbor] = []
+
+                for val in list(csp.domains[neighbor]):
+                    if not csp.is_consistent(neighbor, val, assignment):
+                        csp.domains[neighbor].remove(val)
+                        eliminated[neighbor].append(val)
+
+                if not csp.domains[neighbor]:
+                    return None
+
+        return eliminated
+
+    def backtrack(cs: dict[str, str]) -> dict[str, str] | None:
+
+        if csp.is_complete(cs):
+            return cs
+
+        v = csp.get_unassigned_variables(cs)[0]
+
+        for value in list(csp.domains[v]):
+            stats["assignments"] += 1
+
+            if csp.is_consistent(v, value, cs):
+                csp.assign(v, value, cs)
+                eliminated = forward_check(v, cs)
+
+                if eliminated is not None:
+                    result = backtrack(cs)
+                    if result is not None:
+                        return result
+
+                if eliminated is not None:
+                    for neighbor, values in eliminated.items():
+                        csp.domains[neighbor].extend(values)
+
+                csp.unassign(v, cs)
+                stats["backtracks"] += 1
+
+        return None
+
+    cs: dict[str, str] = {}
+    result = backtrack(cs)
+
+    print(f"[backtracking_fc] Asignaciones intentadas: {stats['assignments']}")
+    print(f"[backtracking_fc] Backtracks realizados:   {stats['backtracks']}")
+
+    return result
 
 def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     """
