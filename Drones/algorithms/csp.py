@@ -224,9 +224,148 @@ def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
       - a revise function that removes unsupported values from one variable's domain.
       - an ac3 function that manages the queue of arcs to check and calls revise.
       - a backtrack function that integrates AC-3 into the search process.
+    
+    Primera_version:
+    def values_compatible(xi, vi, xj, vj):
+        return csp.is_consistent(xi, vi, xj, vj)
+    
+    def revise(domains, xi, xj):
+        revised = False
+        for vi in domains[xi][:]:
+            supported = False
+            for vj in domains[xj]:
+                if values_compatible(xi, vi, xj, vj):
+                    supported = True
+                    break
+            if not supported:
+                domains[xi].remove(vi)
+                revised = True
+        return revised
+
+    def ac3(domains, queue):
+        while queue:
+            xi, xj = queue.pop(0)
+            if revise(domains, xi, xj):
+                if len(domains[xi]) == 0:
+                    return False
+                for xk in csp.get_neighbors(xi):
+                    if xk != xj:
+                        queue.append((xk, xi))
+        return True
+    
+    def backtrack(assignment, domains):
+        if len(assignment) == len(csp.variables):
+            return assignment
+        
+        for var in csp.variables:
+            if var not in assignment:
+                break
+
+        for value in domains[var]:
+
+            new_assignment = assignment.copy()
+            new_assignment[var] = value
+
+            new_domains = {v: domains[v][:] for v in domains}
+            new_domains[var] = [value]
+
+            queue = []
+            for neighbor in csp.get_neighbors(var):
+                queue.append((neighbor, var))
+
+            if ac3(new_domains, queue):
+                result = backtrack(new_assignment, new_domains)
+                if result is not None:
+                    return result
+
+        return None
+    
+    domains = {v: csp.domains[v][:] for v in csp.variables}
+    
+    queue = []
+    for xi in csp.variables:
+        for xj in csp.get_neighbors(xi):
+            queue.append((xi, xj))
+            
+    if not ac3(domains, queue):
+        return None
+    
+    return backtrack({}, domains)
+    
+    Prompt:Estoy implementando el algoritmo backtracking_ac3 para un CSP de asignación de drones, al ejecutar el siguiente comando:
+            python main.py -m csp -a backtracking_ac3 -l heavy_cargo -n 20 -q 
+            obtengo “No solution found”, revisa si el problema está en la implementación de AC3 (revise, values_compatible) o en la función is_consistent? 
+    
     """
-    # TODO: Implement your code here
-    return None
+    def values_compatible(xi, vi, xj, vj):
+        if xi == xj:
+            return False
+        
+        return True
+    
+    def revise(domains, xi, xj):
+        revised = False
+        for vi in domains[xi][:]:
+            supported = False
+            for vj in domains[xj]:
+                if values_compatible(xi, vi, xj, vj):
+                    supported = True
+                    break
+            if not supported:
+                domains[xi].remove(vi)
+                revised = True
+        return revised
+
+    def ac3(domains, queue):
+        while queue:
+            xi, xj = queue.pop(0)
+            if revise(domains, xi, xj):
+                if len(domains[xi]) == 0:
+                    return False
+                for xk in csp.get_neighbors(xi):
+                    if xk != xj:
+                        queue.append((xk, xi))
+        return True
+    
+    def backtrack(assignment, domains):
+        if len(assignment) == len(csp.variables):
+            return assignment
+        
+        for var in csp.variables:
+            if var not in assignment:
+                break
+
+        for value in domains[var]:
+
+            new_assignment = assignment.copy()
+            new_assignment[var] = value
+
+            new_domains = {v: domains[v][:] for v in domains}
+            new_domains[var] = [value]
+
+            queue = []
+            for neighbor in csp.get_neighbors(var):
+                queue.append((neighbor, var))
+
+            if ac3(new_domains, queue):
+                result = backtrack(new_assignment, new_domains)
+                if result is not None:
+                    return result
+
+        return None
+    
+    domains = {v: csp.domains[v][:] for v in csp.variables}
+    
+    queue = []
+    for xi in csp.variables:
+        for xj in csp.get_neighbors(xi):
+            queue.append((xi, xj))
+            
+    if not ac3(domains, queue):
+        return None
+    
+    return backtrack({}, domains)
+    
 
 
 def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
