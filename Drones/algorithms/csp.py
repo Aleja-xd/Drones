@@ -379,6 +379,74 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     - LCV (Least Constraining Value): When ordering values for a variable, prefer
       values that rule out the fewest choices for neighboring variables.
     - Use csp.get_num_conflicts(var, value, assignment) to count how many values would be ruled out for neighbors if var=value is assigned.
-    """
-    # TODO: Implement your code here (BONUS)
-    return None
+    
+    Primera_version:
+    def bactrack(assignment,domains):
+        if len(assignment) == len(csp.variables):
+            return assignment
+        
+        unnassigned = [v for v in csp.variables if v not in assignment]
+        var = min(unnassigned, key=lambda var: len(domains[var]))
+        
+        values = sorted(domains[var], key=lambda val: csp.get_num_conflicts(mrv, val, assignment))
+
+        for value in values:
+            if csp.is_consistent(var, value, assignment):
+                new_assignment = assignment.copy()
+                new_assignment[var] = value
+
+                new_domains = {v: domains[v][:] for v in domains}
+                new_domains[var] = [value]
+
+                for neighbor in csp.get_neighbors(var):
+                    if neighbor not in new_assignment:
+                        new_domains[neighbor] = [v for v in new_domains[neighbor] if csp.is_consistent(neighbor, v, new_assignment)]
+                        if not new_domains[neighbor]:
+                            break
+                result = backtrack(new_assignment, new_domains)
+                if result is not None:
+                    return result
+            return None
+        domains = {v: csp.domains[v][:] for v in csp.variables}
+        return backtrack({}, domains)
+        
+        Promt: Estoy implementando backtracking con MRV y LCV para un CSP de asignación de drones, esta es mi primera versión del código, pero no encuentra solución o tiene errores, ayudame a corregirlo y completar la implementación correctamente.
+        """
+    def backtrack(assignment,domains):
+        if len(assignment) == len(csp.variables):
+            return assignment
+        
+        unnassigned = [v for v in csp.variables if v not in assignment]
+        var = min(unnassigned, key=lambda v: (len(domains[v]), -len(csp.get_neighbors(v))))
+        
+        values = sorted(domains[var], key=lambda val: csp.get_num_conflicts(var, val, assignment))
+
+        for value in values:
+            if csp.is_consistent(var, value, assignment):
+                new_assignment = assignment.copy()
+                new_assignment[var] = value
+
+                new_domains = {v: domains[v][:] for v in domains}
+                new_domains[var] = [value]
+
+                for neighbor in csp.get_neighbors(var):
+                    if neighbor not in new_assignment:
+                        filtered = []
+
+                        for v in new_domains[neighbor]:
+                            temp_assignment = new_assignment.copy()
+                            temp_assignment[neighbor] = v
+
+                            if csp.is_consistent(neighbor, v, temp_assignment):
+                                filtered.append(v)
+
+                        new_domains[neighbor] = filtered
+
+                if not new_domains[neighbor]:
+                    break
+                result = backtrack(new_assignment, new_domains)
+                if result is not None:
+                    return result
+        return None
+    domains = {v: csp.domains[v][:] for v in csp.variables}
+    return backtrack({}, domains)
