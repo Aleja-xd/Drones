@@ -156,7 +156,7 @@ Mantén la estructura general del código, la función backtracking_fc, las func
     """
     stats = {"assignments": 0, "backtracks": 0}
 
-    def forward_check(var: str, assignment: dict[str, str]) -> dict[str, list[str]] | None:
+    def forward_check(var: str, assignment: dict[str, str]) -> tuple[dict[str, list[str]], bool]:
 
         eliminated: dict[str, list[str]] = {}
 
@@ -170,9 +170,9 @@ Mantén la estructura general del código, la función backtracking_fc, las func
                         eliminated[neighbor].append(val)
 
                 if not csp.domains[neighbor]:
-                    return None
+                    return eliminated, False  
 
-        return eliminated
+        return eliminated, True
 
     def backtrack(cs: dict[str, str]) -> dict[str, str] | None:
 
@@ -186,16 +186,15 @@ Mantén la estructura general del código, la función backtracking_fc, las func
 
             if csp.is_consistent(v, value, cs):
                 csp.assign(v, value, cs)
-                eliminated = forward_check(v, cs)
+                eliminated, success = forward_check(v, cs)
 
-                if eliminated is not None:
+                if success:
                     result = backtrack(cs)
                     if result is not None:
                         return result
 
-                if eliminated is not None:
-                    for neighbor, values in eliminated.items():
-                        csp.domains[neighbor].extend(values)
+                for neighbor, values in eliminated.items():
+                    csp.domains[neighbor].extend(values)
 
                 csp.unassign(v, cs)
                 stats["backtracks"] += 1
