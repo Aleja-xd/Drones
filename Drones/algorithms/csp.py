@@ -428,6 +428,7 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
                 new_domains = {v: domains[v][:] for v in domains}
                 new_domains[var] = [value]
+                failed = False
 
                 for neighbor in csp.get_neighbors(var):
                     if neighbor not in new_assignment:
@@ -441,9 +442,12 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
                                 filtered.append(v)
 
                         new_domains[neighbor] = filtered
+                        if not filtered:
+                            failed = True
+                            break
 
-                if not new_domains[neighbor]:
-                    break
+                if failed:
+                    continue
                 result = backtrack(new_assignment, new_domains)
                 if result is not None:
                     return result
