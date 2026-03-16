@@ -64,13 +64,13 @@ class MinimaxAgent(MultiAgentSearchAgent):
         - Use self.evaluation_function(state) to evaluate leaf/terminal states.
         - The next agent is (agent_index + 1) % num_agents. Depth decreases after all agents have moved (full ply).
         - Return the ACTION (not the value) that maximizes the minimax value for the drone.
-        
+    def minimax(state: GameState, agent_index: int) -> float:
         if state.is_win() or state.is_lose(): 
             return self.evaluation_function(state)
         
-        gentes= state.get_num_agents()
+        agents= state.get_num_agents()
         acciones= state.get_legal_actions(agent_index)
-        next_agent= (agent_index + 1) % num_agents
+        next_agent= (agent_index + 1) % agents
         
         if next_agent == 0: 
             return maxTurn(state, acciones, next_agent)
@@ -81,7 +81,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         maximo= float('-inf')
         for a in acciones: 
             successor = state.generate_successor(agent_index, a)
-            value = get_action(successor,agent_index + 1)    
+            value = minimax(successor,next_agent)    
             maximo = max(value, maximo)
         
         return maximo
@@ -90,7 +90,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
         minimo= float('inf')
         for a in acciones: 
             successor = state.generate_successor(agent_index, a)
-            value = get_action(successor,agent_index + 1)    
+            value = minimax(successor,next_agent)    
             minimo = min(value, minimo)
         
         return minimo
@@ -137,13 +137,13 @@ class MinimaxAgent(MultiAgentSearchAgent):
             if state.is_win() or state.is_lose() or profundidad == 0:
                 return self.evaluation_function(state)
 
-            gentes = state.get_num_agents()
+            agents = state.get_num_agents()
             acciones = state.get_legal_actions(agent_index)
 
             if not acciones:
                 return self.evaluation_function(state)
 
-            next_agent = (agent_index + 1) % gentes
+            next_agent = (agent_index + 1) % agents
 
             if agent_index == 0:
                 return maxTurn(state, acciones, agent_index, next_agent, profundidad)
@@ -190,11 +190,11 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
         mejor_accion = None
         maximo = float("-inf")
-        gentes = state.get_num_agents()
+        agents= state.get_num_agents()
 
         for a in acciones:
             successor = state.generate_successor(self.index, a)
-            next_agent = (self.index + 1) % gentes
+            next_agent = (self.index + 1) % agents
             profundidad = self.depth - 1 if next_agent == 0 else self.depth
             value = minimax(successor, next_agent, profundidad)
 
@@ -225,9 +225,96 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         - Update alpha at MAX nodes: alpha = max(alpha, value).
         - Update beta at MIN nodes: beta = min(beta, value).
         - Pass alpha and beta through the recursive calls.
+        
+        PROMPT: Segun el minimax propuesto esta el alphabeta completo y coherente? Pon las correcciones 
+        en el codigo y agrega un comentario en las lineas adicionales
         """
-        # TODO: Implement your code here (BONUS)
-        return None
+        def alphabeta(state: GameState, agent_index: int, profundidad: int, alpha: float, beta: float) -> float:
+            if state.is_win() or state.is_lose() or profundidad == 0:
+                return self.evaluation_function(state)
+
+            agents = state.get_num_agents()
+            acciones = state.get_legal_actions(agent_index)
+
+            if not acciones:
+                return self.evaluation_function(state)
+
+            next_agent = (agent_index + 1) % agents
+
+            if agent_index == 0:
+                return maxTurn(state, acciones, agent_index, next_agent, profundidad, alpha, beta)
+            return minTurn(state, acciones, agent_index, next_agent, profundidad, alpha, beta)
+
+        def maxTurn(
+            state: GameState,
+            acciones: list[Directions],
+            agent_index: int,
+            next_agent: int,
+            profundidad: int,
+            alpha: float,
+            beta: float
+        ) -> float:
+            maximo = float("-inf")
+            for a in acciones:
+                successor = state.generate_successor(agent_index, a)
+                siguiente_profundidad = profundidad - 1 if next_agent == 0 else profundidad
+                value = alphabeta(successor, next_agent, siguiente_profundidad, alpha, beta)
+                maximo = max(value, maximo)
+                alpha = max(alpha, maximo)
+
+                if maximo > beta:
+                    break
+                
+            return maximo
+
+        def minTurn(
+            state: GameState,
+            acciones: list[Directions],
+            agent_index: int,
+            next_agent: int,
+            profundidad: int,
+            alpha: float,
+            beta: float
+        ) -> float:
+            minimo = float("inf")
+            for a in acciones:
+                successor = state.generate_successor(agent_index, a)
+                siguiente_profundidad = profundidad - 1 if next_agent == 0 else profundidad
+                value = alphabeta(successor, next_agent, siguiente_profundidad, alpha, beta)
+                minimo = min(value, minimo)
+                beta = min(beta, minimo)
+                if minimo < alpha:
+                    break  
+
+            return minimo
+
+        if state.is_win() or state.is_lose():
+            return None
+
+        acciones = state.get_legal_actions(self.index)
+        if not acciones:
+            return None
+
+        mejor_accion = None
+        maximo = float("-inf")
+        agents = state.get_num_agents()
+        alpha = float("-inf")  # Linea adicional: alpha inicial en la raiz
+        beta = float("inf")  # Linea adicional: beta inicial en la raiz
+
+        for a in acciones:
+            successor = state.generate_successor(self.index, a)
+            next_agent = (self.index + 1) % agents
+            profundidad = self.depth - 1 if next_agent == 0 else self.depth
+            value = alphabeta(
+                successor, next_agent, profundidad, alpha, beta
+            )  # Linea adicional: pasar alpha y beta a la recursion
+
+            if value > maximo:
+                maximo = value
+                mejor_accion = a
+            alpha = max(alpha, maximo)  # Linea adicional: actualizar alpha en la raiz
+
+        return mejor_accion
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
