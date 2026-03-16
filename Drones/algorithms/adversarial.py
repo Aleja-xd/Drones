@@ -123,5 +123,54 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         - Do NOT prune in expectimax (unlike alpha-beta).
         - self.prob is set via the constructor argument prob.
         """
-        # TODO: Implement your code here
-        return None
+
+        num_agents = state.get_num_agents()
+
+        def expectimax(state, depth, agent_index):
+
+            # estado terminal
+            if state.is_win() or state.is_lose() or depth == 0:
+                return self.evaluation_function(state)
+
+            actions = state.get_legal_actions(agent_index)
+
+            if not actions:
+                return self.evaluation_function(state)
+
+            next_agent = (agent_index + 1) % num_agents
+            next_depth = depth - 1 if next_agent == 0 else depth
+
+            # DRON (MAX)
+            if agent_index == 0:
+                value = float("-inf")
+                for action in actions:
+                    successor = state.generate_successor(agent_index, action)
+                    value = max(value, expectimax(successor, next_depth, next_agent))
+                return value
+
+            # CAZADOR (CHANCE MIXTO)
+            else:
+                values = []
+                for action in actions:
+                    successor = state.generate_successor(agent_index, action)
+                    values.append(expectimax(successor, next_depth, next_agent))
+
+                p = self.prob
+
+                greedy_value = min(values)
+                mean_value = sum(values) / len(values)
+
+                return (1 - p) * greedy_value + p * mean_value
+
+        best_action = None
+        best_value = float("-inf")
+
+        for action in state.get_legal_actions(0):
+            successor = state.generate_successor(0, action)
+            value = expectimax(successor, self.depth, 1)
+
+            if value > best_value:
+                best_value = value
+                best_action = action
+
+        return best_action
