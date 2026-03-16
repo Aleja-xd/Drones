@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from algorithms.utils import bfs_distance, dijkstra
 
 if TYPE_CHECKING:
     from world.game_state import GameState
@@ -41,5 +42,51 @@ def evaluation_function(state: GameState) -> float:
     - Consider edge cases: no pending deliveries, no hunters nearby.
     - A good evaluation function balances delivery progress with hunter avoidance.
     """
-    # TODO: Implement your code here
-    return 0.0
+
+    if state.is_win():
+        return 1000
+
+    if state.is_lose():
+        return -1000
+
+    drone_pos = state.get_drone_position()
+    hunters = state.get_hunter_positions()
+    deliveries = state.get_pending_deliveries()
+    score = state.get_score()
+    layout = state.get_layout()
+
+    value = score
+
+    # --- Delivery distance factor
+    if deliveries:
+        dists = []
+        for d in deliveries:
+            cost, _ = dijkstra(layout, drone_pos, d)
+            dists.append(cost)
+
+        min_delivery_dist = min(dists)
+        value += 200 / (1 + min_delivery_dist)
+
+        # penalize many deliveries left
+        value -= 100 * len(deliveries)
+    else:
+        value += 500
+
+    # --- Hunter distance factor
+    if hunters:
+        hunter_dists = []
+        for h in hunters:
+            dist = bfs_distance(layout, h, drone_pos, hunter_restricted=True)
+            hunter_dists.append(dist)
+
+        min_hunter_dist = min(hunter_dists)
+
+        if min_hunter_dist == 0:
+            return -1000
+
+        value += 300 * min_hunter_dist
+
+    # --- Anti-loop small penalty
+    value -= 5
+
+    return max(-1000, min(1000, value))
