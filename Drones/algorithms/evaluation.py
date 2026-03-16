@@ -65,12 +65,12 @@ def evaluation_function(state: GameState) -> float:
             dists.append(cost)
 
         min_delivery_dist = min(dists)
-        value += 200 / (1 + min_delivery_dist)
+        value += 150 / (1 + min_delivery_dist)
 
         # penalize many deliveries left
-        value -= 100 * len(deliveries)
+        value -= 80 * len(deliveries)
     else:
-        value += 500
+        value += 400
 
     # --- Hunter distance factor
     if hunters:
@@ -84,9 +84,9 @@ def evaluation_function(state: GameState) -> float:
         if min_hunter_dist == 0:
             return -1000
 
-        value += 300 * min_hunter_dist
+        value += 200 * min_hunter_dist
 
     # --- Anti-loop small penalty
-    value -= 5
+    value -= 2
 
     return max(-1000, min(1000, value))
