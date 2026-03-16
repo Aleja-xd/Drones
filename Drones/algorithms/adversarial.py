@@ -64,9 +64,145 @@ class MinimaxAgent(MultiAgentSearchAgent):
         - Use self.evaluation_function(state) to evaluate leaf/terminal states.
         - The next agent is (agent_index + 1) % num_agents. Depth decreases after all agents have moved (full ply).
         - Return the ACTION (not the value) that maximizes the minimax value for the drone.
+        
+        if state.is_win() or state.is_lose(): 
+            return self.evaluation_function(state)
+        
+        gentes= state.get_num_agents()
+        acciones= state.get_legal_actions(agent_index)
+        next_agent= (agent_index + 1) % num_agents
+        
+        if next_agent == 0: 
+            return maxTurn(state, acciones, next_agent)
+        else:
+            return minTurn(state, acciones, next_agent)
+        
+    def maxTurn(state, acciones, agent_index) -> float:
+        maximo= float('-inf')
+        for a in acciones: 
+            successor = state.generate_successor(agent_index, a)
+            value = get_action(successor,agent_index + 1)    
+            maximo = max(value, maximo)
+        
+        return maximo
+        
+    def minTurn(state: GameState, acciones, agent_index) -> float:
+        minimo= float('inf')
+        for a in acciones: 
+            successor = state.generate_successor(agent_index, a)
+            value = get_action(successor,agent_index + 1)    
+            minimo = min(value, minimo)
+        
+        return minimo
+        
+    PROMPT: Eres un expero en algortimos de juegos de adversarios. Teniendo en cuenta los archivos en el workspace, 
+    el codigo referencia proporcionado, y el problema tu tarea es corregir y complementar la funcion get_action en
+    la clase minimax. Estoy teniendo problemas principalmente con el manejo de la profundidad  y las funciones, ya 
+    que no estan correctamente definidas, pero me gustaria mantenerlas. Si es necesario utiliza contexto de game_state.py.
+    Edita el archivo adversarial.py en la funcion indicada, y luego porporciona una lista de mejoras y cambios. 
+
+    #Codigo referencia: [Codigo que esta arriba]
+    #Problema (Este resumen fue realizado con IA): El problema plantea un escenario donde drones deben llevar suministros médicos a comunidades aisladas en la 
+    selva amazónica, enfrentando tanto restricciones operacionales como amenazas externas. Se debe modelar la navegación del
+    dron cuando aparecen cazadores adversarios. En este juego adversario, el dron es el agente MAX que busca entregar todos
+    los suministros evitando ser capturado, mientras que los cazadores son agentes MIN que intentan interceptarlo moviéndose
+    hacia su posición. El juego ocurre por turnos: el dron se mueve primero y luego cada cazador, y termina cuando el dron 
+    completa todas las entregas (victoria) o cuando un cazador ocupa la misma casilla que el dron (derrota). El problema 
+    se resuelve usando Minimax (y sus variantes) para decidir el mejor movimiento del dron anticipando las acciones de los 
+    cazadores.
+    
+    
+    
+    Mejoras y cambios:
+    1. Separé correctamente el retorno de get_action: ahora devuelve una Directions, 
+    no un valor heurístico.
+    2. Añadí una función recursiva interna minimax(...) para calcular utilidades numéricas
+    sin romper la firma pública del agente.
+    3. Corregí el manejo de profundidad: profundidad solo disminuye cuando termina un 
+    ply completo, es decir, cuando el siguiente agente vuelve a ser el dron (next_agent == 0).
+    4. Arreglé variables no definidas en el código original como agent_index y num_agents,
+    usando self.index y state.get_num_agents().
+    5. Hice que el dron sea nodo MAX y todos los cazadores nodos MIN, respetando el orden 
+    de turnos del problema.
+    6. Añadí casos base correctos para estados terminales, profundidad cero y 
+    ausencia de acciones legales, evaluando con self.evaluation_function(state).
+    7. Implementé la selección de la mejor acción en la raíz comparando 
+    los valores minimax de cada sucesor.
+    8. Eliminé el bloque inválido PROMPT: que dejaba la clase 
+    en un estado inconsistente.
+    9. Verifiqué sintaxis con python3 -m py_compile Drones/algorithms/adversarial.py.
+        
         """
-        # TODO: Implement your code here
-        return None
+        def minimax(state: GameState, agent_index: int, profundidad: int) -> float:
+            if state.is_win() or state.is_lose() or profundidad == 0:
+                return self.evaluation_function(state)
+
+            gentes = state.get_num_agents()
+            acciones = state.get_legal_actions(agent_index)
+
+            if not acciones:
+                return self.evaluation_function(state)
+
+            next_agent = (agent_index + 1) % gentes
+
+            if agent_index == 0:
+                return maxTurn(state, acciones, agent_index, next_agent, profundidad)
+            return minTurn(state, acciones, agent_index, next_agent, profundidad)
+
+        def maxTurn(
+            state: GameState,
+            acciones: list[Directions],
+            agent_index: int,
+            next_agent: int,
+            profundidad: int,
+        ) -> float:
+            maximo = float("-inf")
+            for a in acciones:
+                successor = state.generate_successor(agent_index, a)
+                siguiente_profundidad = profundidad - 1 if next_agent == 0 else profundidad
+                value = minimax(successor, next_agent, siguiente_profundidad)
+                maximo = max(value, maximo)
+
+            return maximo
+
+        def minTurn(
+            state: GameState,
+            acciones: list[Directions],
+            agent_index: int,
+            next_agent: int,
+            profundidad: int,
+        ) -> float:
+            minimo = float("inf")
+            for a in acciones:
+                successor = state.generate_successor(agent_index, a)
+                siguiente_profundidad = profundidad - 1 if next_agent == 0 else profundidad
+                value = minimax(successor, next_agent, siguiente_profundidad)
+                minimo = min(value, minimo)
+
+            return minimo
+
+        if state.is_win() or state.is_lose():
+            return None
+
+        acciones = state.get_legal_actions(self.index)
+        if not acciones:
+            return None
+
+        mejor_accion = None
+        maximo = float("-inf")
+        gentes = state.get_num_agents()
+
+        for a in acciones:
+            successor = state.generate_successor(self.index, a)
+            next_agent = (self.index + 1) % gentes
+            profundidad = self.depth - 1 if next_agent == 0 else self.depth
+            value = minimax(successor, next_agent, profundidad)
+
+            if value > maximo:
+                maximo = value
+                mejor_accion = a
+
+        return mejor_accion
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
