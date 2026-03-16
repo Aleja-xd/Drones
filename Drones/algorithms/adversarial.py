@@ -226,7 +226,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         - Update beta at MIN nodes: beta = min(beta, value).
         - Pass alpha and beta through the recursive calls.
         
-        PROMPT: Segun el minimax propuesto esta el alphabeta completo y coherente? Pon las correcciones 
+        PROMPT con version inicial (Las correcciones por la IA estan comentadas): Segun el minimax propuesto esta el alphabeta completo y coherente? Pon las correcciones 
         en el codigo y agrega un comentario en las lineas adicionales
         """
         def alphabeta(state: GameState, agent_index: int, profundidad: int, alpha: float, beta: float) -> float:
